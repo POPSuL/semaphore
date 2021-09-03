@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/ansible-semaphore/semaphore/api"
 	"github.com/ansible-semaphore/semaphore/api/sockets"
@@ -12,8 +15,6 @@ import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/handlers"
 	"github.com/spf13/cobra"
-	"net/http"
-	"os"
 )
 
 var configPath string
@@ -21,7 +22,7 @@ var configPath string
 var rootCmd = &cobra.Command{
 	Use:   "semaphore",
 	Short: "Ansible Semaphore is a beautiful web UI for Ansible",
-	Long: 	`Ansible Semaphore is a beautiful web UI for Ansible.
+	Long: `Ansible Semaphore is a beautiful web UI for Ansible.
 Source code is available at https://github.com/ansible-semaphore/semaphore.
 Complete documentation is available at https://ansible-semaphore.com.`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -51,13 +52,15 @@ func Execute() {
 
 func runService() {
 	store := createStore()
+	scheduler := tasks.CreateScheduler(store)
+	defer scheduler.Stop()
 	defer store.Close()
 
 	dialect, err := util.Config.GetDialect()
 	if err != nil {
 		panic(err)
 	}
-	switch dialect  {
+	switch dialect {
 	case util.DbDriverMySQL:
 		fmt.Printf("MySQL %v@%v %v\n", util.Config.MySQL.Username, util.Config.MySQL.Hostname, util.Config.MySQL.DbName)
 	case util.DbDriverBolt:
@@ -74,12 +77,14 @@ func runService() {
 
 	go sockets.StartWS()
 	go tasks.StartRunner()
+	go scheduler.Run()
 
 	route := api.Route()
 
 	route.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			context.Set(r, "store", store)
+			context.Set(r, "scheduler", scheduler)
 			next.ServeHTTP(w, r)
 		})
 	})

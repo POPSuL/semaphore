@@ -1,11 +1,12 @@
 package projects
 
 import (
+	"net/http"
+	"strconv"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/ansible-semaphore/semaphore/api/helpers"
 	"github.com/ansible-semaphore/semaphore/db"
-	"net/http"
-	"strconv"
 
 	"github.com/gorilla/context"
 )
@@ -42,7 +43,7 @@ func GetTemplates(w http.ResponseWriter, r *http.Request) {
 	project := context.Get(r, "project").(db.Project)
 
 	params := db.RetrieveQueryParams{
-		SortBy: r.URL.Query().Get("sort"),
+		SortBy:       r.URL.Query().Get("sort"),
 		SortInverted: r.URL.Query().Get("order") == desc,
 	}
 
@@ -125,7 +126,7 @@ func UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 	objType := "template"
 
 	_, err = helpers.Store(r).CreateEvent(db.Event{
-		UserID:		 &user.ID,
+		UserID:      &user.ID,
 		ProjectID:   &template.ProjectID,
 		Description: &desc,
 		ObjectID:    &template.ID,

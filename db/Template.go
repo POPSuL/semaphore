@@ -24,4 +24,5 @@ type Template struct {
 
 	VaultPassID *int      `db:"vault_pass_id" json:"vault_pass_id"`
 	VaultPass   AccessKey `db:"-" json:"-"`
+	Schedule    string    `db:"schedule" json:"schedule"`
 }

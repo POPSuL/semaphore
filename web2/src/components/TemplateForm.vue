@@ -67,6 +67,13 @@
               :disabled="formSaving"
           ></v-select>
 
+          <v-text-field
+            v-model="item.schedule"
+            label="Launch Schedule"
+            :disabled="formSaving"
+            placeholder="Example: 0 */1 * * *"
+          ></v-text-field>
+
         </v-col>
 
         <v-col cols="12" md="6" class="pb-0">
